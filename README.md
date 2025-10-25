@@ -18,10 +18,6 @@ Clone the repository with:
 git clone https://github.com/openfort-xyz/opensigner.git
 ```
 
-## WIP: Build
-
-We currently depend on the unpublished `crypto-js`, so there's some glue code in the `Makefile`.
-
 Build the project with:
 
 ```bash
@@ -29,8 +25,8 @@ make clean build
 ```
 
 > [!WARNING]
-> The clean build will take a long time since the auth service depends on BetterAuth,
-> which uses `@better-auth/cli@latest` for migrations, which takes a long time to install.
+> The clean build will take a some time since the auth service depends on BetterAuth,
+> which uses `@better-auth/cli@latest` for migrations, which takes a some time to install.
 
 Run it with:
 
