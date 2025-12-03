@@ -116,7 +116,7 @@ services:
   cold_storage:
     container_name: coldstorage
     platform: linux/amd64
-    image: openfort/shield:v0.2.28
+    image: ghcr.io/openfort-xyz/shield:v0.2.30
     command: server
     depends_on:
       mysql:
