@@ -39,16 +39,16 @@ export const sidebar: Sidebar =
                     link: '/security/deployment-scenarios',
                 },
                 {
-                    text: 'Self-Hosting Guide',
-                    link: '/security/self-hosting',
-                },
-                {
                     text: 'Threat Analysis',
                     link: '/security/threat-analysis',
                 },
                 {
                     text: 'System Integrity',
                     link: '/security/system-integrity',
+                },
+                {
+                    text: 'Self-Hosting',
+                    link: '/security/self-hosting',
                 },
             ]
         },

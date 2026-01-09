@@ -1,3 +1,8 @@
+---
+title: Recovery Methods
+description: The three supported recovery methods are _automatic_, _password_ and _passkey_ based recovery. Each has different security considerations.
+---
+
 # Recovery Methods
 
 The three supported recovery methods are _automatic_, _password_ and _passkey_ based recovery. Each has different security considerations.
@@ -66,7 +71,6 @@ As in Password Recovery Mode, 256-bit length keys will be used. This key will be
 The key is generated using a secure RNG (golang's `crypto/rand`).
 :::
 
----
 
 ## Two-Factor Authentication (2FA) for Automatic Recovery
 
@@ -99,15 +103,3 @@ When 2FA is enabled:
 4. Only after OTP verification can the cold share be decrypted
 
 This ensures that even with valid authentication tokens, the backend cannot unilaterally access user keys without active user participation.
-
----
-
-## Recovery Method Comparison
-
-| Feature | Password | Passkey | Automatic | Automatic + 2FA |
-|---------|----------|---------|-----------|-----------------|
-| User remembers secret | ✅ Password | ❌ Device-based | ❌ None | ❌ None |
-| Cold share encrypted client-side | ✅ | ✅ | ❌ | ❌ |
-| Requires user action for recovery | ✅ | ✅ | ❌ | ✅ (OTP) |
-| Backend can reconstruct key alone | ❌ | ❌ | ✅ | ❌ |
-| Best for | Maximum security | Convenience + security | Simplest UX | Balanced security/UX |

@@ -1,38 +1,83 @@
+---
+title: Deployment Scenarios
+description: Due to the modular nature of the system, it is possible for users to run or even implement their own components.
+---
+
 # Deployment Scenarios
 
 Due to the modular nature of the system, it is possible for users to run or even implement their own components.
 It is also possible to have hybrid scenarios in which Openfort hosts some components while others are self-hosted.
 
-## Understanding Custodial vs Non-Custodial Deployments
+## Understanding the Custody Model
 
-:::warning[Key Distinction]
-OpenSigner configuration becomes **custodial** when the same entity controls both hot and cold storage, unless the right protections are introduced:
-- **User-held secret** (password or passkey recovery)
-- **Client-side key derivation**
-- **2FA/OTP verification**
+:::warning[Default Configuration]
+**OpenSigner configuration is custodial by default** unless additional protections are introduced. This is by design—the open-source setup provides the infrastructure, but achieving non-custodial guarantees requires specific configuration choices.
 :::
 
-### What Makes a Deployment Non-Custodial?
+### Frequently Asked Questions
 
-In a non-custodial OpenSigner deployment, the backend **never** has access to enough shares to reconstruct a private key. This is achieved through one of these mechanisms:
+#### Does the backend ever have access to enough shares to reconstruct a private key?
 
-| Mechanism | How It Prevents Backend Reconstruction |
-|-----------|--------------------------------------|
-| **Password Recovery** | Cold share is encrypted with user's password; backend never sees plaintext |
-| **Passkey Recovery** | Cold share encryption key is derived client-side via PRF extension |
-| **2FA for Automatic Recovery** | OTP required for cold share decryption; requires active user participation |
-| **Split Hosting** | Hot and cold storage hosted by different, untrusted parties |
+**In automatic recovery mode without 2FA: Yes.**
 
-:::info[Platform-Controlled Storage Warning]
-In the default OpenSigner setup, both hot and cold storage appear platform-controlled. Without user-held secrets or 2FA:
-1. Backend has access to the hot share via valid JWT
-2. Backend has access to the cold share encryption (in automatic recovery mode)
-3. Backend can coordinate to reconstruct the private key
+The backend has access to:
+1. **Hot share** – accessible via a valid user JWT
+2. **Cold share** – in automatic recovery mode, the cold share encryption is handled by the cold storage itself
 
-**This is custodial behavior.** For non-custodial guarantees, user-held secrets or 2FA are required.
+With these two shares, the backend can coordinate to reconstruct the user's private key. This was validated through testing: using a valid user JWT, it is possible to access both shares and reconstruct/export a user's private key on the backend without any additional user-held secret.
+
+**In password/passkey recovery or automatic recovery with 2FA: No.**
+
+The backend cannot reconstruct the key because:
+- **Password recovery**: Cold share is encrypted with user's password (client-side); backend never has the plaintext
+- **Passkey recovery**: Cold share encryption key is derived client-side via PRF extension; backend never has access
+- **Automatic + 2FA**: OTP verification is required, which requires active user participation that cannot be forged
+
+#### What prevents backend-side reconstruction in non-custodial deployments?
+
+| Protection Mechanism | How It Works | Backend Access Blocked? |
+|---------------------|--------------|------------------------|
+| **Password Recovery** | User-provided password encrypts cold share client-side | ✅ Yes |
+| **Passkey Recovery** | PRF extension derives encryption key on user device | ✅ Yes |
+| **2FA/OTP for Automatic** | OTP sent to user's email/phone required for decryption | ✅ Yes |
+| **Split Hosting** | Hot and cold storage hosted by different, mutually-untrusting parties | ✅ Yes |
+
+#### Is the open-source configuration custodial by default?
+
+**Yes.** In the default OpenSigner open-source setup:
+
+1. Both hot and cold storage are platform-controlled
+2. Automatic recovery mode allows share decryption without user-held secrets
+3. A valid JWT is sufficient to coordinate access to both shares
+4. No additional user action is required beyond standard authentication
+
+**To achieve non-custodial guarantees, you must:**
+
+- Use **password-based recovery** (recommended for maximum security), OR
+- Use **passkey-based recovery**, OR  
+- Enable **2FA/OTP verification** for automatic recovery, OR
+- Host hot and cold storage with **different, mutually-untrusting parties**
+
+### Regulatory Considerations
+
+:::note[MiCA and Custody Definitions]
+Under regulatory frameworks like MiCA, a platform that is technically capable of reconstructing or exporting a user's private key—even if gated by authentication and frontend flows—may be considered custodial.
+
+The open-source OpenSigner configuration, when using automatic recovery without 2FA, meets this technical definition of custody because the platform can access both shares needed for key reconstruction.
+
+**For non-custodial regulatory classification:** Implement one of the protection mechanisms listed above to ensure the platform cannot unilaterally reconstruct user keys.
 :::
 
----
+### Production vs Open-Source Configuration
+
+| Aspect | Open-Source Default | Non-Custodial Production |
+|--------|--------------------|-----------------------|
+| Hot + Cold share access | Backend has access to both | Backend blocked from at least one |
+| User-held secret required | No | Yes (password, passkey, or OTP) |
+| Can reconstruct key server-side | Yes | No |
+| Regulatory custody classification | Likely custodial | Non-custodial |
+
+
 
 ## Scenario Overview
 
@@ -48,7 +93,6 @@ This section evaluates the following scenarios, where the components are hosted 
 | [Scenario 5](/security/deployment-scenarios#scenario-5-self-hosted-auth-service) | <span style={{ color:'#fc3c2f' }}>**TP**</span> | <span style={{ color:'#3b7eee' }}>**SH**</span> | <span style={{ color:'#fc3c2f' }}>**TP**</span> | <span style={{ color:'#fc3c2f' }}>**TP**</span> |
 | [Scenario 6](/security/deployment-scenarios#scenario-6-fully-hosted) | <span style={{ color:'#fc3c2f' }}>**TP**</span> | <span style={{ color:'#fc3c2f' }}>**TP**</span> | <span style={{ color:'#fc3c2f' }}>**TP**</span> | <span style={{ color:'#fc3c2f' }}>**TP**</span> |
 
----
 
 ### Scenario 1: Fully Self-Hosted
 
@@ -90,7 +134,6 @@ All of the next scenarios load their iframe from a third party, which could have
 Scenario 1, as the iframe is loaded from the same origin as the rest of the components and
 served by the hosting party.
 
----
 
 ### Scenario 2: Self-Hosted Auth + Cold Storage
 
@@ -105,7 +148,6 @@ As we mentioned before, iframe builds are attested and those feature derived che
 
 The iframe is meant to be called via RPC methods from another app, so it is possible for both developers and end users to verify if the obtained static assets' checksums match those provided by the official build logs.
 
----
 
 ### Scenario 3: Self-Hosted Hot Storage
 
@@ -124,7 +166,6 @@ Scenarios in which the party controlling the cold storage is also responsible fo
 share keeping, password-based recovery provides more protection than automatic recovery since
 the provider has access to all the required entropy to decrypt the cold storage share.
 
----
 
 ### Scenario 4: Self-Hosted Cold Storage
 
@@ -140,7 +181,6 @@ and accepting them from the hot storage; as they implement and control both.
 Unlike in Scenario 3, the hot shares are not encrypted with user
 entropy which makes them vulnerable to access token forgery.
 
----
 
 ### Scenario 5: Self-Hosted Auth Service
 
@@ -152,7 +192,6 @@ In this scenario, all the third party controls are the cold and hot storages.
 That, when combined with the brute-force risk mentioned in Scenario 3,
 could be enough to reconstruct the users' private keys.
 
----
 
 ### Scenario 6: Fully Hosted
 

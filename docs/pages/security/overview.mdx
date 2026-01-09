@@ -1,8 +1,21 @@
+---
+title: Security Overview
+description: The OpenSigner system is composed of multiple components that communicate over HTTP.
+---
+
 # Security Overview
 
 The OpenSigner system is composed of multiple components that communicate over HTTP.
 Communication includes sensitive data such as key shares or access tokens, therefore **it is crucial
 to ensure communication is secured through TLS** and HTTPS is enforced.
+
+:::warning[Custody Model]
+**The open-source OpenSigner configuration is custodial by default** when using automatic recovery without 2FA. The backend can access both hot and cold shares to reconstruct user private keys.
+
+For non-custodial deployments, you must use **password recovery**, **passkey recovery**, or enable **2FA for automatic recovery**.
+
+→ See [Deployment Scenarios](/security/deployment-scenarios#understanding-the-custody-model) for complete details.
+:::
 
 ## Trust Model
 
@@ -67,6 +80,8 @@ Make sure to validate TLS certificates to prevent Man In The Middle (MITM) attac
 
 ## Next Steps
 
-- Learn about [Recovery Methods](/security/recovery-methods) - password, passkey, and automatic recovery options
-- Explore [Deployment Scenarios](/security/deployment-scenarios) - hosting configurations and their security implications
-- Read the [Threat Analysis](/security/threat-analysis) - potential attack vectors and mitigations
+- **[Custody Model FAQ](/security/deployment-scenarios#frequently-asked-questions)** - Key questions about backend reconstruction and non-custodial guarantees
+- [Recovery Methods](/security/recovery-methods) - Password, passkey, and automatic recovery options
+- [Deployment Scenarios](/security/deployment-scenarios) - Hosting configurations and their security implications
+- [Self-Hosting Guide](/security/self-hosting) - Migration guide and TEE recommendations
+- [Threat Analysis](/security/threat-analysis) - Potential attack vectors and mitigations
