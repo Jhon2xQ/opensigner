@@ -42,10 +42,10 @@ This endpoint will return an encryption session ID, which the developer must pro
 
 While adding complexity, it allows users to recover their keys without needing to remember a password.
 
-For the system to remain non-custodial, the provider must differ from the cold storage provider.
+For the system to remain non-custodial, the **Developer** (holding the encryption part) must differ from the **Cold Storage Host**.
 
 :::danger
-If the same entity controls the cold storage and the providers
+If the same entity controls the cold storage and the **Developer Encryption Part**,
 the system becomes custodial, as the entity can access the recovery share.
 :::
 

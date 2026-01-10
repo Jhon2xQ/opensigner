@@ -9,6 +9,18 @@ The OpenSigner system is composed of multiple components that communicate over H
 Communication includes sensitive data such as key shares or access tokens, therefore **it is crucial
 to ensure communication is secured through TLS** and HTTPS is enforced.
 
+## Glossary
+
+| Term | Definition |
+|---|---|
+| **End User** | The final user of the wallet (e.g., a player in a game). |
+| **Developer / Project Owner** | The entity building the application (e.g., You). Controls the project secrets. |
+| **Host / Operator** | The entity operating the infrastructure (e.g., Openfort or You in self-hosted). |
+| **Auth Provider** | The system validating user identity (e.g., Openfort Auth, Google, Custom OIDC). |
+| **Shield (Cold Storage)** | Component that stores encrypted recovery shares. |
+| **Hot Storage** | Component that stores frequently accessed shares. |
+| **iFrame** | Client-side component running in the user's browser that reconstructs keys. |
+
 :::warning[Custody Model]
 **The open-source OpenSigner configuration is custodial by default** when using automatic recovery without 2FA. The backend can access both hot and cold shares to reconstruct user private keys.
 
@@ -24,14 +36,16 @@ The key is split into three shares, two of them are enough to reconstruct the ke
 Once a user logs into a device, each one of the three shares is stored in:
 
 - **User's device**: the domain-protected storage of the browser.
-- **Hot storage**: users can access this share through an access token granted by the authentication service.
-- **Cold storage**: users can access this share provided a request is made with valid entropy and a valid token is issued by the authentication service.
+- **Hot storage**: users can access this share through an access token granted by the **Auth Provider**.
+- **Cold storage** (Shield): users can access this share provided a request is made with valid entropy and a valid token is issued by the **Auth Provider**.
 
 The system relies on the following roots of trust:
 
 ### Authentication Service
 
-The authentication service is responsible for validating the user's identity and granting access tokens.
+### Auth Provider (Authentication Service)
+
+The **Auth Provider** is responsible for validating the user's identity and granting access tokens.
 It must be trusted to securely handle user credentials and issue tokens that can be used to access shares.
 While the authentication service API is provided, each implementation will be tied to each project's specific needs,
 and needs to be done with care.
@@ -68,8 +82,11 @@ Use trusted browsers, servers, execution environments...
 
 ### Project Owner
 
-Users with authentication key recovery trust on the owner of the project they belong to with part of the
-entropy of their recovery share.
+### Developer / Project Owner
+
+Users with **automatic recovery** trust the owner of the project (Developer) to hold the **Developer Encryption Part** securely.
+If the Developer loses this part, automatic recovery becomes impossible for registered devices.
+If the Developer exposes this part, the non-custodial guarantees of the **Host** are compromised.
 
 ### Transport
 

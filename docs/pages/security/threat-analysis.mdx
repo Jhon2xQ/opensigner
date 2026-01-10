@@ -69,19 +69,21 @@ however, the risk might become more significant.
 |-----------------|---------|
 | Password-based | ❌ Attack fails - attacker needs recovery password |
 | Passkey-based | ❌ Attack fails - attacker needs passkey device |
-| Automatic (no 2FA) | ⚠️ Attack succeeds - credentials unlock all shares |
+| Automatic (Self-Hosted, No 2FA) | ⚠️ Attack succeeds - credentials unlock all shares if Admin holds all keys |
+| Automatic (Cloud) | ❌ Attack fails - Admin holds Developer Part, attacker lacks it |
 | Automatic (with 2FA) | ❌ Attack fails - attacker needs OTP |
 
-### Malicious Hosting Provider
+### Malicious Host
 
 **Attack:** The entity hosting OpenSigner components attempts to access user keys.
 
 | Hosting Configuration | Outcome |
 |----------------------|---------|
-| Single provider hosts all + automatic recovery | ⚠️ Provider can reconstruct keys |
-| Single provider + password/passkey recovery | ❌ User entropy protects cold share |
-| Single provider + automatic + 2FA | ❌ OTP required for cold share access |
-| Split hosting (different providers) | ❌ No single party has both shares |
+| Single Host operates all + holds ALL keys (Self-Hosted default) | ⚠️ Host can reconstruct keys |
+| Cloud Host (e.g. Openfort) + Developer holds Encryption Part | ❌ Host has only 1 usable share (Hot) |
+| Single Host + password/passkey recovery | ❌ User entropy protects cold share |
+| Single Host + automatic + 2FA | ❌ OTP required for cold share access |
+| Split hosting (different Hosts) | ❌ No single party has both shares |
 
 ### Token Forgery
 
