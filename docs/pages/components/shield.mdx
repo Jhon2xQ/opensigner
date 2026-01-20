@@ -179,3 +179,217 @@ Having non-authenticated encryption is not a big issue here either: decrypting r
 Shield will store the encrypted contents of the cold share along with the internal passkey ID.
 By *internal passkey ID* we mean the identifier the passkey authenticator gave to that particular passkey.
 OpenSigner also stores the environment in which the passkey was created. This information is mainly extracted from the `User-Agent` token and is meant for both hinting and tracking purposes.
+
+## 2FA (Two-Factor Authentication)
+
+Shield supports Two-Factor Authentication (2FA) using One-Time Passwords (OTP) to add an additional layer of security when creating encrypted sessions.
+
+### Enabling 2FA
+
+2FA is a project-level feature that must be enabled before it can be used. Once enabled, **2FA cannot be disabled** for a project.
+
+To enable 2FA for a project, use the following endpoint:
+
+**Endpoint:** `POST /project/enable-2fa`
+
+**Headers:**
+- `X-API-Key`: Project's API key
+- `X-API-Secret`: Project's API secret
+
+**Response:**
+- `200 OK`: 2FA enabled successfully
+- `409 Conflict`: 2FA already enabled for this project
+
+### How 2FA Works
+
+When 2FA is enabled for a project, users must go through an OTP verification flow when creating an encrypted session. Here's the typical flow:
+
+#### 1. Request OTP
+
+Before creating an encrypted session, users must request an OTP code.
+
+**Endpoint:** `POST /project/otp`
+
+**Headers:**
+- `X-API-Key`: Project's API key
+- `X-API-Secret`: Project's API secret
+
+**Request Body:**
+```json
+{
+  "user_id": "user_external_id",
+  "email": "user@example.com",
+  "dangerously_skip_verification": false
+}
+```
+
+**OR**
+
+```json
+{
+  "user_id": "user_external_id",
+  "phone": "+1234567890",
+  "dangerously_skip_verification": false
+}
+```
+
+**Parameters:**
+- `user_id` (required): The external user ID
+- `email` (optional): User's email address to receive OTP via email
+- `phone` (optional): User's phone number to receive OTP via SMS
+- `dangerously_skip_verification` (optional, default: false): If set to `true`, skips OTP verification
+
+**Note:** You must provide either `email` or `phone`, but not both.
+
+**The `dangerously_skip_verification` Flag:**
+
+This flag can be used to simplify onboarding for new users. For example:
+- When **creating a new wallet**: Set this flag to `true` to skip OTP verification and streamline the signup process
+- When **recovering an existing wallet**: Set this flag to `false` to require OTP verification for additional security
+
+When this flag is set to `true`, an OTP is generated but not sent to the user, and the OTP verification step can be skipped when creating an encryption session.
+
+**OTP Delivery Methods:**
+
+Shield supports two delivery methods for OTP codes:
+
+1. **Email OTP**: When an email address is provided, the OTP is sent to the user's email
+2. **SMS OTP**: When a phone number is provided, the OTP is sent via SMS to the user's phone
+
+**Response:**
+- `200 OK`: OTP generated and sent successfully
+
+#### 2. Create Encryption Session with OTP
+
+After receiving the OTP, users create an encrypted session by providing the OTP code.
+
+**Endpoint:** `POST /project/encryption-session`
+
+**Headers:**
+- `X-API-Key`: Project's API key
+- `X-API-Secret`: Project's API secret
+
+**Request Body:**
+```json
+{
+  "encryption_part": "encryption_part_value",
+  "user_id": "user_external_id",
+  "otp_code": "123456789"
+}
+```
+
+**Parameters:**
+- `encryption_part` (required): The encryption part for the project
+- `user_id` (required): The external user ID
+- `otp_code` (optional): The OTP code received via email or SMS. Required if `dangerously_skip_verification` was `false`
+
+**Response:**
+```json
+{
+  "session_id": "generated_session_id"
+}
+```
+
+The `session_id` can then be used with the `X-Encryption-Session` header when registering, updating, or retrieving shares.
+
+### 2FA Security Features
+
+- **OTP Verification**: When 2FA is enabled and `dangerously_skip_verification` is `false`, users must provide a valid OTP code to create an encrypted session
+- **Contact Verification**: Shield verifies and stores hashed contact information (email or phone) to ensure consistency across requests
+- **Rate Limiting**: Project-level rate limits prevent abuse of OTP generation
+- **Session Expiry**: Encryption sessions are time-limited for security
+
+### Example Workflows
+
+#### New User Signup (Skip Verification)
+```
+1. POST /project/otp with dangerously_skip_verification: true
+2. POST /project/encryption-session (no OTP code needed)
+3. Use session_id to register shares
+```
+
+#### Existing User Recovery (With Verification)
+```
+1. POST /project/otp with dangerously_skip_verification: false
+2. User receives OTP via email or SMS
+3. POST /project/encryption-session with OTP code
+4. Use session_id to retrieve shares
+```
+
+## Errors
+
+Shield API returns various error codes depending on the type of failure encountered. Errors are organized by category below.
+
+### OTP Errors
+
+| Error | Description |
+|-------|-------------|
+| `rate limit exceeded` | Too many OTP generation attempts. Rate limit has been exceeded for this user. |
+| `failed to generate OTP` | Internal error occurred while generating the OTP code. |
+| `failed to marshal OTP request` | Internal error occurred while processing the OTP request. |
+| `otp was expired` | The provided OTP code has expired (OTPs typically expire after a few minutes). |
+| `otp invalidated after max failed attempts` | The OTP has been invalidated due to too many failed verification attempts. |
+| `received otp is invalid` | The provided OTP code does not match the expected value. |
+| `otp is missing` | OTP code is required but was not provided in the request. |
+
+### Project Errors
+
+| Error | Description |
+|-------|-------------|
+| `project not found` | The specified project does not exist. |
+| `encryption part not found` | The encryption part for the project was not found. |
+| `key in DB already exist` | An encryption key already exists for this project. |
+| `data in DB not found` | The requested data was not found in the database. |
+| `encryption part already exists` | An encryption part has already been registered for this project. |
+| `encryption part is required` | An encryption part must be provided for this operation. |
+| `invalid encryption part` | The provided encryption part is invalid or malformed. |
+| `invalid encryption session` | The encryption session ID is invalid, expired, or does not exist. |
+| `invalid encryption key builder type` | The encryption key builder type is not supported. |
+| `reconstructed key mismatch` | The reconstructed encryption key does not match the expected value. |
+| `project part is required` | The project part of the encryption key is required. |
+| `database part is required` | The database part of the encryption key is required. |
+| `failed to split key` | An error occurred while splitting the encryption key. |
+| `otp verification required` | OTP verification is required to complete this operation. |
+
+### Share Errors
+
+| Error | Description |
+|-------|-------------|
+| `share not found` | The requested share does not exist. |
+| `share already exists` | A share already exists for this user. |
+
+### User Errors
+
+| Error | Description |
+|-------|-------------|
+| `user not found` | The specified user does not exist. |
+| `external user not found` | The external user ID was not found. |
+| `external user already exists` | A user with this external ID already exists. |
+| `user contact information not found` | Contact information (email or phone) not found for this user. |
+
+### Provider Errors
+
+| Error | Description |
+|-------|-------------|
+| `invalid provider config` | The provider configuration is invalid or incomplete. |
+| `unknown provider type` | The specified provider type is not recognized. |
+| `custom authentication already registered for this project` | A custom authentication provider already exists for this project. |
+| `custom authentication not found` | The requested authentication provider was not found. |
+| `provider not configured` | The authentication provider has not been configured for this project. |
+| `provider config mismatch` | The provider configuration does not match the expected format. |
+| `unexpected status code` | The provider returned an unexpected HTTP status code. |
+| `certificate type not supported` | The certificate type is not supported by Shield. |
+| `provider misconfigured` | The provider is misconfigured and cannot be used for authentication. |
+| `session expired` | The authentication session has expired. |
+
+### Keychain Errors
+
+| Error | Description |
+|-------|-------------|
+| `keychain not found` | The keychain for the specified user was not found. |
+
+### Infrastructure Errors
+
+| Error | Description |
+|-------|-------------|
+| `database unavailable` | The database is currently unavailable or unreachable. |
