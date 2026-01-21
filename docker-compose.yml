@@ -70,10 +70,10 @@ services:
       HOST: ${AUTH_SERVICE_CONTAINER_HOST:-0.0.0.0}
       PORT: ${AUTH_SERVICE_CONTAINER_PORT:-3000}
       DB_NAME: ${AUTH_SERVICE_DB_NAME:-authservice}
-      DB_USER: ${AUTH_SERVICE_DB_NAME:-postgres}
-      DB_PASS: ${AUTH_SERVICE_DB_NAME:-postgres_password}
-      DB_HOST: ${AUTH_SERVICE_DB_NAME:-ofpostgres}
-      DB_PORT: ${AUTH_SERVICE_DB_NAME:-5432}
+      DB_USER: ${AUTH_SERVICE_DB_USER:-postgres}
+      DB_PASS: ${AUTH_SERVICE_DB_PASS:-postgres_password}
+      DB_HOST: ${AUTH_SERVICE_DB_HOST:-ofpostgres}
+      DB_PORT: ${AUTH_SERVICE_DB_PORT:-5432}
     networks:
       - db_network
     expose:
@@ -124,10 +124,10 @@ services:
       PORT: ${HOT_STORAGE_CONTAINER_PORT:-8080}
       AUTH_SERVER_URL: ${AUTH_SERVER_URL:-http://authservice:3000}
       DB_NAME: ${HOT_STORAGE_DB_NAME:-hotstorage}
-      DB_USER: ${HOT_STORAGE_DB_NAME:-postgres}
-      DB_PASS: ${HOT_STORAGE_DB_NAME:-postgres_password}
-      DB_HOST: ${HOT_STORAGE_DB_NAME:-ofpostgres}
-      DB_PORT: ${HOT_STORAGE_DB_NAME:-5432}
+      DB_USER: ${HOT_STORAGE_DB_USER:-postgres}
+      DB_PASS: ${HOT_STORAGE_DB_PASS:-postgres_password}
+      DB_HOST: ${HOT_STORAGE_DB_HOST:-ofpostgres}
+      DB_PORT: ${HOT_STORAGE_DB_PORT:-5432}
     networks:
       - db_network
     expose:
