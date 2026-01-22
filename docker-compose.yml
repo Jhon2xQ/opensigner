@@ -11,6 +11,13 @@ services:
       - ./postgres:/docker-entrypoint-initdb.d
     networks:
       - db_network
+    command: >
+      bash -c "
+      docker-entrypoint.sh postgres & 
+      until pg_isready -h localhost -U postgres; do sleep 1; done;
+      psql -U postgres -d postgres -c 'CREATE DATABASE authservice;' || true;
+      psql -U postgres -d postgres -c 'CREATE DATABASE hotstorage;' || true;
+      wait"
     expose:
       - "5432"
     restart: unless-stopped
