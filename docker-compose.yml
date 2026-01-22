@@ -58,8 +58,6 @@ services:
       - db_network
     expose:
       - "5173"
-    ports:
-      - "${IFRAME_HOST_PORT:-7050}:${IFRAME_CONTAINER_PORT:-5173}"
     depends_on:
       auth_service:
         condition: service_started
@@ -84,14 +82,12 @@ services:
       - db_network
     expose:
       - "${AUTH_SERVICE_CONTAINER_PORT:-3000}"
-    ports:
-      - "${AUTH_SERVICE_HOST_PORT:-7052}:${AUTH_SERVICE_CONTAINER_PORT:-3000}"
     depends_on:
       postgres:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${AUTH_SERVICE_CONTAINER_PORT:-3000}/health"]
+      test: ["CMD", "curl", "-f", "http://authservice:${AUTH_SERVICE_CONTAINER_PORT:-3000}/health"]
       interval: 15s
       timeout: 5s
       retries: 10
@@ -115,8 +111,6 @@ services:
       - db_network
     expose:
       - "${COLD_STORAGE_CONTAINER_PORT:-8080}"
-    ports:
-      - "${COLD_STORAGE_HOST_PORT:-7053}:${HOST_STORAGE_CONTAINER_PORT:-8080}"
     restart: unless-stopped
 
   hot_storage:
@@ -127,7 +121,7 @@ services:
     image: openfort/hot_storage:latest
     environment:
       HOST: ${HOT_STORAGE_CONTAINER_HOST:-0.0.0.0}
-      PORT: ${HOT_STORAGE_CONTAINER_PORT:-8080}
+      PORT: ${HOT_STORAGE_CONTAINER_PORT:-3000}
       AUTH_SERVER_URL: ${AUTH_SERVER_URL:-http://authservice:3000}
       DB_NAME: ${HOT_STORAGE_DB_NAME:-hotstorage}
       DB_USER: ${HOT_STORAGE_DB_USER:-postgres}
@@ -137,15 +131,13 @@ services:
     networks:
       - db_network
     expose:
-      - "${HOT_STORAGE_CONTAINER_PORT:-8080}"
-    ports:
-      - "${HOT_STORAGE_HOST_PORT:-7054}:${HOT_STORAGE_CONTAINER_PORT:-8080}"
+      - "${HOT_STORAGE_CONTAINER_PORT:-3000}"
     depends_on:
       postgres:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${HOT_STORAGE_CONTAINER_PORT:-8080}/health"]
+      test: ["CMD", "curl", "-f", "http://hotstorage:${HOT_STORAGE_CONTAINER_PORT:-3000}/health"]
       interval: 15s
       timeout: 5s
       retries: 10
